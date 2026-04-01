@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InfoGeoMA — Information-Geometric Meta-Analysis</title>
+<style>
+:root{--bg:#0a0a1a;--surface:#141428;--surface2:#1c1c38;--card:#1a1a34;--border:#2a2a4a;--text:#e8e8f0;--text2:#9898b0;--accent:#ff6d00;--accent2:#ff9100;--green:#4caf50;--red:#f44336;--amber:#ff9800;--blue:#42a5f5;--font:'Segoe UI',system-ui,sans-serif;--serif:Georgia,'Times New Roman',serif;--mono:'Consolas','Monaco',monospace;--radius:10px;--shadow:0 4px 24px rgba(0,0,0,0.5)}
+[data-theme="light"]{--bg:#f5f3ef;--surface:#fff;--surface2:#f0ede7;--card:#fff;--border:#d5d0c8;--text:#1a1a2e;--text2:#666;--shadow:0 4px 24px rgba(0,0,0,0.08)}
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6}
+.page{max-width:1000px;margin:0 auto;padding:24px 16px}
+header{text-align:center;padding:28px 0 20px;border-bottom:2px solid var(--accent);margin-bottom:20px}
+.title{font-family:var(--serif);font-size:2rem;font-weight:700;color:var(--accent)}
+.subtitle{font-size:0.88rem;color:var(--text2);margin-top:4px}
+.badge{display:inline-block;background:var(--accent);color:#000;padding:2px 10px;border-radius:12px;font-size:0.7rem;font-weight:700;margin-left:8px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card h2{font-size:1rem;color:var(--accent);margin-bottom:10px;font-family:var(--serif)}
+.tabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
+.tab-btn{background:var(--surface);border:1px solid var(--border);color:var(--text2);padding:8px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;font-weight:600;transition:0.2s}
+.tab-btn.active{background:var(--card);color:var(--accent);border-bottom-color:var(--card)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.btn{padding:8px 18px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.btn-accent{background:var(--accent);color:#000}.btn-accent:hover{filter:brightness(1.15)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.ex-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:5px 12px;border-radius:16px;font-size:11px;cursor:pointer}.ex-btn:hover{border-color:var(--accent);color:var(--accent)}
+table.dt{width:100%;border-collapse:collapse;font-size:13px}
+table.dt th{background:var(--surface);color:var(--text2);font-size:11px;text-transform:uppercase;padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)}
+table.dt td{padding:5px 8px;border-bottom:1px solid var(--border)}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+.metric{background:var(--surface);padding:12px;border-radius:8px;text-align:center}
+.metric-val{font-size:1.5rem;font-weight:900;font-family:var(--serif)}
+.metric-lbl{font-size:0.73rem;color:var(--text2);margin-top:2px}
+canvas{width:100%;border-radius:8px;background:var(--surface)}
+.formula{font-family:var(--mono);font-size:0.82rem;color:var(--text2);background:var(--surface);padding:8px 12px;border-radius:6px;margin:8px 0}
+.report-text{font-family:var(--serif);font-size:0.9rem;line-height:1.7;white-space:pre-wrap}
+.theme-btn{position:fixed;top:12px;right:12px;background:var(--surface);border:1px solid var(--border);color:var(--text2);padding:5px 10px;border-radius:16px;cursor:pointer;font-size:11px;z-index:100}
+.skip-nav{position:absolute;left:-9999px;top:auto}.skip-nav:focus{position:fixed;left:0;top:0;z-index:999;padding:8px 16px;background:var(--accent);color:#000;text-decoration:none;border-radius:0 0 8px 0}
+@media print{.no-print{display:none!important}body{background:#fff;color:#000}}
+</style>
+</head>
+<body>
+<a href="#main" class="skip-nav">Skip to content</a>
+<button class="theme-btn no-print" onclick="toggleTheme()" aria-label="Toggle theme">Light</button>
+
+<div class="page" id="main" role="main">
+<header>
+  <div class="title">InfoGeoMA <span class="badge">RIEMANNIAN</span></div>
+  <div class="subtitle">Information-Geometric Meta-Analysis &mdash; Geodesic Pooling on Statistical Manifolds</div>
+  <div style="font-size:0.78rem;color:var(--text2);margin-top:4px">Fisher-Rao metric &bull; Geodesic Fr&eacute;chet mean &bull; Riemannian curvature-based heterogeneity</div>
+</header>
+
+<div class="tabs no-print" role="tablist">
+  <button class="tab-btn active" role="tab" onclick="switchTab('data')" id="tbtn-data">Data</button>
+  <button class="tab-btn" role="tab" onclick="switchTab('manifold')" id="tbtn-manifold">Manifold Analysis</button>
+  <button class="tab-btn" role="tab" onclick="switchTab('geodesic')" id="tbtn-geodesic">Geodesic Pooling</button>
+  <button class="tab-btn" role="tab" onclick="switchTab('report')" id="tbtn-report">Report</button>
+</div>
+
+<!-- Data Tab -->
+<div class="tab-panel active" id="panel-data" role="tabpanel">
+  <div class="card">
+    <h2>Study Data (Effect Size + SE)</h2>
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+      <button class="ex-btn" onclick="loadExample(0)">BCG Vaccine (k=13)</button>
+      <button class="ex-btn" onclick="loadExample(1)">Magnesium-MI (k=8)</button>
+      <button class="ex-btn" onclick="loadExample(2)">SGLT2i HF (k=6)</button>
+    </div>
+    <table class="dt" id="dataTable">
+      <thead><tr><th>Study</th><th>Effect (yi)</th><th>SE</th><th></th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-sm btn-outline" onclick="addRow()">+ Add</button>
+      <button class="btn btn-sm btn-outline" onclick="clearData()">Clear</button>
+      <button class="btn btn-accent" onclick="runAnalysis()">Run Information-Geometric Analysis</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manifold Tab -->
+<div class="tab-panel" id="panel-manifold" role="tabpanel">
+  <div class="card">
+    <h2>Statistical Manifold</h2>
+    <div class="formula">
+      Each study N(&mu;_i, &sigma;_i&sup2;) is a point on the 2D normal manifold.
+      Fisher-Rao distance: d_FR(&theta;_i, &theta;_j) = &radic;(2) &middot; |arccosh(1 + (&mu;_i-&mu;_j)&sup2; / (2&sigma;_i&sigma;_j) + (&sigma;_i&sup2;-&sigma;_j&sup2;)&sup2; / (4&sigma;_i&sup2;&sigma;_j&sup2;))|
+    </div>
+    <div class="metrics" id="manifoldMetrics"></div>
+    <canvas id="manifoldCanvas" width="960" height="500" aria-label="Statistical manifold showing studies as points in Fisher-Rao geometry"></canvas>
+  </div>
+  <div class="card">
+    <h2>Fisher-Rao Distance Matrix</h2>
+    <table class="dt" id="distTable"></table>
+  </div>
+</div>
+
+<!-- Geodesic Tab -->
+<div class="tab-panel" id="panel-geodesic" role="tabpanel">
+  <div class="card">
+    <h2>Geodesic Fr&eacute;chet Mean vs Euclidean Mean</h2>
+    <div class="formula">
+      Fr&eacute;chet mean: &theta;* = argmin_&theta; &sum; w_i &middot; d_FR(&theta;, &theta;_i)&sup2;
+      &mdash; the point on the manifold minimising weighted geodesic distances.
+    </div>
+    <div class="metrics" id="geodesicMetrics"></div>
+    <canvas id="geodesicCanvas" width="960" height="400" aria-label="Comparison of geodesic Frechet mean with Euclidean inverse-variance mean"></canvas>
+  </div>
+  <div class="card">
+    <h2>Curvature-Based Heterogeneity</h2>
+    <div class="formula">
+      &kappa;-heterogeneity = mean geodesic distance from Fr&eacute;chet mean / expected distance under homogeneity.
+      Unlike I&sup2;, this captures non-Euclidean spread on the manifold.
+    </div>
+    <table class="dt" id="hetTable"></table>
+  </div>
+</div>
+
+<!-- Report Tab -->
+<div class="tab-panel" id="panel-report" role="tabpanel">
+  <div class="card">
+    <h2>Structured Report</h2>
+    <div class="report-text" id="reportText">Run analysis to generate report.</div>
+    <div class="no-print" style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn btn-sm btn-outline" onclick="copyReport()">Copy</button>
+      <button class="btn btn-sm btn-outline" onclick="exportJSON()">Export JSON</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<footer style="text-align:center;padding:20px;color:var(--text2);font-size:0.78rem;border-top:1px solid var(--border);margin-top:16px">
+  InfoGeoMA v1.0 &mdash; Fisher-Rao metric on the normal manifold &mdash; MIT License
+</footer>
+
+<script>
+/* ============================================================
+   InfoGeoMA: Information-Geometric Meta-Analysis
+
+   Mathematical foundation:
+   - Amari S. Information Geometry and Its Applications. Springer, 2016.
+   - Rao CR. Information and accuracy attainable in estimation. Bull Calcutta Math Soc. 1945;37:81-91.
+   - Atkinson C, Mitchell AFS. Rao's distance measure. Sankhya A. 1981;43:345-365.
+
+   Key idea: treat each study as a point on a statistical manifold
+   (the space of normal distributions) equipped with the Fisher-Rao
+   metric. Pool via the Fréchet mean (geodesic barycenter) rather
+   than Euclidean inverse-variance weighting.
+   ============================================================ */
+
+var state = { studies: [], result: null };
+
+var EXAMPLES = [
+  { name: 'BCG Vaccine', studies: [
+    {study:'Aronson 1948',yi:-0.89,se:0.34},{study:'Ferguson 1949',yi:-0.46,se:0.42},
+    {study:'Rosenthal 1960',yi:-1.57,se:0.25},{study:'Hart 1969',yi:-1.34,se:0.29},
+    {study:'Frimodt 1973',yi:0.01,se:0.22},{study:'Comstock 1974a',yi:-0.47,se:0.41},
+    {study:'Comstock 1974b',yi:-0.02,se:0.18},{study:'Comstock 1976',yi:0.12,se:0.09},
+    {study:'TPT Madras 1980',yi:0.71,se:0.27},{study:'Coetzee 1986',yi:-0.69,se:0.30},
+    {study:'Vandiviere 1973',yi:-0.34,se:0.56},{study:'BMRC 1971',yi:-0.81,se:0.29},
+    {study:'Rosenthal 1961',yi:-1.62,se:0.37}
+  ]},
+  { name: 'Magnesium-MI', studies: [
+    {study:'Morton 1984',yi:-0.73,se:1.27},{study:'Rasmussen 1986',yi:-2.05,se:1.12},
+    {study:'Smith 1986',yi:-1.30,se:0.83},{study:'Abraham 1987',yi:-0.03,se:1.44},
+    {study:'Feldstedt 1988',yi:0.26,se:0.47},{study:'Shechter 1990',yi:-2.35,se:1.15},
+    {study:'Ceremuzynski 1989',yi:-1.25,se:1.38},{study:'ISIS-4 1995',yi:0.05,se:0.04}
+  ]},
+  { name: 'SGLT2i HF', studies: [
+    {study:'DAPA-HF',yi:-0.28,se:0.06},{study:'EMPEROR-Red',yi:-0.24,se:0.07},
+    {study:'SOLOIST',yi:-0.33,se:0.15},{study:'DELIVER',yi:-0.18,se:0.05},
+    {study:'EMPEROR-Pres',yi:-0.19,se:0.06},{study:'DAPA-CKD sub',yi:-0.50,se:0.20}
+  ]}
+];
+
+// === FISHER-RAO GEOMETRY ===
+
+/**
+ * Fisher-Rao distance between two univariate normal distributions.
+ * N(mu1, sigma1^2) and N(mu2, sigma2^2).
+ *
+ * Using Atkinson-Mitchell (1981) formula for the normal manifold:
+ * d_FR = sqrt(2) * arccosh(1 + (mu1-mu2)^2/(2*s1*s2) + (s1^2-s2^2)^2/(4*s1^2*s2^2))
+ *
+ * where s1 = sigma1, s2 = sigma2.
+ */
+function fisherRaoDistance(mu1, s1, mu2, s2) {
+  if (s1 <= 0 || s2 <= 0) return Infinity;
+  var dmu = mu1 - mu2;
+  var ds2 = s1*s1 - s2*s2;
+  var arg = 1 + dmu*dmu / (2*s1*s2) + ds2*ds2 / (4*s1*s1*s2*s2);
+  // arccosh(x) = log(x + sqrt(x^2 - 1)) for x >= 1
+  if (arg < 1) arg = 1; // numerical guard
+  var acosh = Math.log(arg + Math.sqrt(arg*arg - 1));
+  return Math.sqrt(2) * acosh;
+}
+
+/**
+ * Compute the full Fisher-Rao distance matrix.
+ */
+function distanceMatrix(studies) {
+  var k = studies.length;
+  var D = [];
+  for (var i = 0; i < k; i++) {
+    D[i] = [];
+    for (var j = 0; j < k; j++) {
+      D[i][j] = fisherRaoDistance(studies[i].yi, studies[i].se, studies[j].yi, studies[j].se);
+    }
+  }
+  return D;
+}
+
+/**
+ * Geodesic Fréchet mean on the normal manifold.
+ * Minimises sum(w_i * d_FR(theta, theta_i)^2) via gradient descent.
+ *
+ * We use the (mu, sigma) parameterisation with precision-based weights.
+ */
+function frechetMean(studies, maxIter) {
+  maxIter = maxIter || 200;
+  var k = studies.length;
+  var w = studies.map(function(s){ return 1/(s.se*s.se); });
+  var sumW = w.reduce(function(a,b){return a+b;},0);
+  w = w.map(function(wi){return wi/sumW;});
+
+  // Initialise at Euclidean (inverse-variance) mean
+  var mu = 0, sigma = 0;
+  for (var i = 0; i < k; i++) { mu += w[i]*studies[i].yi; sigma += w[i]*studies[i].se; }
+
+  // Gradient descent on weighted Fréchet functional
+  var lr = 0.01;
+  for (var iter = 0; iter < maxIter; iter++) {
+    var gradMu = 0, gradSigma = 0;
+    var totalCost = 0;
+
+    for (var i = 0; i < k; i++) {
+      var d = fisherRaoDistance(mu, sigma, studies[i].yi, studies[i].se);
+      totalCost += w[i] * d * d;
+
+      // Numerical gradient (central difference)
+      var eps = 1e-5;
+      var dMuPlus = fisherRaoDistance(mu + eps, sigma, studies[i].yi, studies[i].se);
+      var dMuMinus = fisherRaoDistance(mu - eps, sigma, studies[i].yi, studies[i].se);
+      gradMu += w[i] * (dMuPlus*dMuPlus - dMuMinus*dMuMinus) / (2*eps);
+
+      var dSigPlus = fisherRaoDistance(mu, Math.max(sigma + eps, eps), studies[i].yi, studies[i].se);
+      var dSigMinus = fisherRaoDistance(mu, Math.max(sigma - eps, eps), studies[i].yi, studies[i].se);
+      gradSigma += w[i] * (dSigPlus*dSigPlus - dSigMinus*dSigMinus) / (2*eps);
+    }
+
+    mu -= lr * gradMu;
+    sigma = Math.max(sigma - lr * gradSigma, 0.001);
+
+    // Adaptive learning rate
+    if (iter > 50) lr = 0.005;
+    if (iter > 100) lr = 0.002;
+  }
+
+  // Compute final cost and distances
+  var distances = studies.map(function(s) {
+    return fisherRaoDistance(mu, sigma, s.yi, s.se);
+  });
+  var meanDist = distances.reduce(function(a,b){return a+b;},0) / k;
+
+  return {
+    mu: mu, sigma: sigma,
+    cost: distances.reduce(function(a,d,i){return a+w[i]*d*d;},0),
+    distances: distances,
+    meanGeodesicDistance: meanDist,
+    weights: w
+  };
+}
+
+/**
+ * Standard DL pooling for comparison.
+ */
+function dlPool(studies) {
+  var k = studies.length;
+  var yi = studies.map(function(s){return s.yi;});
+  var vi = studies.map(function(s){return s.se*s.se;});
+  var wF = vi.map(function(v){return 1/v;}), sumW = wF.reduce(function(a,b){return a+b;},0);
+  var muF = 0; for(var i=0;i<k;i++) muF += wF[i]*yi[i]; muF /= sumW;
+  var Q = 0; for(var i=0;i<k;i++) Q += wF[i]*(yi[i]-muF)*(yi[i]-muF);
+  var C = sumW - wF.reduce(function(a,w){return a+w*w;},0)/sumW;
+  var tau2 = Math.max(0,(Q-(k-1))/Math.max(C,1e-9));
+  var wR = vi.map(function(v){return 1/(v+tau2);}), sumWR = wR.reduce(function(a,b){return a+b;},0);
+  var est = 0; for(var i=0;i<k;i++) est += wR[i]*yi[i]; est /= sumWR;
+  var se = Math.sqrt(1/sumWR);
+  var I2 = Q>0 ? Math.max(0,(Q-(k-1))/Q) : 0;
+  return {est:est, se:se, tau2:tau2, I2:I2, Q:Q, k:k};
+}
+
+/**
+ * Curvature-based heterogeneity (kappa).
+ * Ratio of observed mean geodesic distance to expected distance under homogeneity.
+ * Under homogeneity, all studies are at the same point → distance = 0.
+ * kappa > 1 indicates non-Euclidean heterogeneity beyond I-squared.
+ */
+function curvatureHeterogeneity(frechet, dl) {
+  var meanSE = Math.max(frechet.sigma, 0.001);
+  var expectedDist = dl.tau2 > 0 ? Math.sqrt(2 * dl.tau2) / meanSE : 0.01;
+  if (!isFinite(expectedDist) || expectedDist <= 0) expectedDist = 0.01;
+  var kappa = frechet.meanGeodesicDistance / expectedDist;
+  if (!isFinite(kappa)) kappa = 0;
+  return {
+    kappa: kappa,
+    meanGeodesicDistance: frechet.meanGeodesicDistance,
+    expectedDist: expectedDist,
+    interpretation: kappa < 0.5 ? 'Low curvature heterogeneity' :
+                    kappa < 1.5 ? 'Moderate curvature heterogeneity' :
+                    kappa < 3.0 ? 'High curvature heterogeneity' :
+                    'Extreme curvature heterogeneity (non-Euclidean structure dominant)'
+  };
+}
+
+// === CANVAS ===
+function setCanvas(c,w,h){var d=window.devicePixelRatio||1;c.width=w*d;c.height=h*d;c.style.width=w+'px';c.style.height=h+'px';var x=c.getContext('2d');x.scale(d,d);return x;}
+
+function drawManifold(studies, D, frechet, dl) {
+  var c = document.getElementById('manifoldCanvas');
+  var W=960, H=480, ctx=setCanvas(c,W,H);
+  var dk = document.documentElement.getAttribute('data-theme')!=='light';
+  var tC=dk?'#e0e0e0':'#1a1a2e', gC=dk?'#2a2a4a':'#ddd';
+
+  ctx.fillStyle = dk?'#141428':'#fff'; ctx.fillRect(0,0,W,H);
+
+  var m = {l:80,r:40,t:50,b:60};
+  var pW=W-m.l-m.r, pH=H-m.t-m.b;
+
+  // Plot: x = mu (effect), y = sigma (SE), size = weight
+  var allMu = studies.map(function(s){return s.yi;});
+  var allSE = studies.map(function(s){return s.se;});
+  var xMin = Math.min.apply(null,allMu)-0.2, xMax = Math.max.apply(null,allMu)+0.2;
+  var yMin = 0, yMax = Math.max.apply(null,allSE)*1.3;
+
+  function xS(v){return m.l+(v-xMin)/(xMax-xMin)*pW;}
+  function yS(v){return m.t+pH-(v-yMin)/(yMax-yMin)*pH;}
+
+  // Grid
+  ctx.strokeStyle=gC;ctx.lineWidth=0.5;
+  for(var x=Math.ceil(xMin*5)/5;x<=xMax;x+=0.2){
+    ctx.beginPath();ctx.moveTo(xS(x),m.t);ctx.lineTo(xS(x),H-m.b);ctx.stroke();
+    ctx.fillStyle=tC;ctx.font='10px Consolas';ctx.textAlign='center';
+    ctx.fillText(x.toFixed(1),xS(x),H-m.b+14);
+  }
+
+  // Geodesic connections (lines with opacity proportional to distance)
+  var maxD = 0;
+  D.forEach(function(row){row.forEach(function(d){if(isFinite(d)&&d>maxD)maxD=d;});});
+  for(var i=0;i<studies.length;i++){
+    for(var j=i+1;j<studies.length;j++){
+      var d=D[i][j];if(!isFinite(d))continue;
+      var alpha=Math.max(0.05,1-d/maxD);
+      ctx.strokeStyle=dk?'rgba(255,109,0,'+alpha*0.4+')':'rgba(200,80,0,'+alpha*0.3+')';
+      ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(xS(studies[i].yi),yS(studies[i].se));
+      ctx.lineTo(xS(studies[j].yi),yS(studies[j].se));ctx.stroke();
+    }
+  }
+
+  // Study points
+  for(var i=0;i<studies.length;i++){
+    var sz=4+frechet.weights[i]*studies.length*8;
+    ctx.fillStyle=dk?'#42a5f5':'#1565c0';
+    ctx.beginPath();ctx.arc(xS(studies[i].yi),yS(studies[i].se),sz,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=tC;ctx.font='10px sans-serif';ctx.textAlign='center';
+    ctx.fillText(studies[i].study.substring(0,10),xS(studies[i].yi),yS(studies[i].se)-sz-4);
+  }
+
+  // Fréchet mean (orange star)
+  var fx=xS(frechet.mu),fy=yS(frechet.sigma);
+  drawStar(ctx,fx,fy,12,'#ff6d00');
+  ctx.fillStyle='#ff6d00';ctx.font='bold 11px sans-serif';ctx.textAlign='left';
+  ctx.fillText('Fr\u00E9chet mean',fx+16,fy+4);
+
+  // DL mean (green diamond)
+  var dx=xS(dl.est),dy=yS(dl.se);
+  ctx.fillStyle='#4caf50';
+  ctx.beginPath();ctx.moveTo(dx,dy-8);ctx.lineTo(dx+8,dy);ctx.lineTo(dx,dy+8);ctx.lineTo(dx-8,dy);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#4caf50';ctx.fillText('DL mean',dx+12,dy+4);
+
+  // Axes
+  ctx.fillStyle=tC;ctx.font='12px sans-serif';ctx.textAlign='center';
+  ctx.fillText('Effect Size (\u03BC)',W/2,H-6);
+  ctx.save();ctx.translate(14,H/2);ctx.rotate(-Math.PI/2);
+  ctx.fillText('Standard Error (\u03C3)',0,0);ctx.restore();
+  ctx.font='13px Georgia';ctx.fillText('Statistical Manifold: Studies as Points in Fisher-Rao Geometry',W/2,22);
+}
+
+function drawStar(ctx,x,y,r,color){
+  ctx.fillStyle=color;ctx.beginPath();
+  for(var i=0;i<5;i++){
+    var a=Math.PI/2+i*2*Math.PI/5;
+    ctx.lineTo(x+r*Math.cos(a),y-r*Math.sin(a));
+    a+=Math.PI/5;
+    ctx.lineTo(x+r*0.4*Math.cos(a),y-r*0.4*Math.sin(a));
+  }
+  ctx.closePath();ctx.fill();
+}
+
+function drawGeodesic(studies, frechet, dl) {
+  var c=document.getElementById('geodesicCanvas');
+  var W=960,H=380,ctx=setCanvas(c,W,H);
+  var dk=document.documentElement.getAttribute('data-theme')!=='light';
+  var tC=dk?'#e0e0e0':'#1a1a2e',gC=dk?'#2a2a4a':'#ddd';
+
+  ctx.fillStyle=dk?'#141428':'#fff';ctx.fillRect(0,0,W,H);
+
+  var k=studies.length;
+  var m={l:160,r:40,t:40,b:50};
+  var pW=W-m.l-m.r,pH=H-m.t-m.b;
+  var rowH=Math.min(28,pH/(k+3));
+
+  // Scale
+  var allVals=[frechet.mu,dl.est,dl.est-1.96*dl.se,dl.est+1.96*dl.se];
+  studies.forEach(function(s){allVals.push(s.yi-1.96*s.se,s.yi+1.96*s.se);});
+  var xMin=Math.min.apply(null,allVals)-0.1,xMax=Math.max.apply(null,allVals)+0.1;
+  function xS(v){return m.l+(v-xMin)/(xMax-xMin)*pW;}
+
+  // Null line
+  ctx.strokeStyle=gC;ctx.lineWidth=1;ctx.setLineDash([4,3]);
+  ctx.beginPath();ctx.moveTo(xS(0),m.t);ctx.lineTo(xS(0),H-m.b);ctx.stroke();ctx.setLineDash([]);
+
+  // Studies
+  for(var i=0;i<k;i++){
+    var y=m.t+i*rowH+rowH/2;
+    var s=studies[i],lo=s.yi-1.96*s.se,hi=s.yi+1.96*s.se;
+    ctx.fillStyle=tC;ctx.font='11px sans-serif';ctx.textAlign='right';
+    ctx.fillText(s.study.substring(0,15),m.l-8,y+4);
+    ctx.strokeStyle=tC;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(xS(lo),y);ctx.lineTo(xS(hi),y);ctx.stroke();
+    var sz=3+frechet.weights[i]*k*4;
+    ctx.fillStyle='#42a5f5';ctx.beginPath();ctx.arc(xS(s.yi),y,sz,0,Math.PI*2);ctx.fill();
+  }
+
+  // DL pooled
+  var dlY=m.t+(k+0.5)*rowH;
+  ctx.fillStyle=tC;ctx.font='11px sans-serif';ctx.textAlign='right';
+  ctx.fillText('DL Euclidean',m.l-8,dlY+4);
+  ctx.fillStyle='#4caf50';
+  ctx.beginPath();ctx.moveTo(xS(dl.est),dlY-7);ctx.lineTo(xS(dl.est)+10,dlY);
+  ctx.lineTo(xS(dl.est),dlY+7);ctx.lineTo(xS(dl.est)-10,dlY);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='#4caf50';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(xS(dl.est-1.96*dl.se),dlY);ctx.lineTo(xS(dl.est+1.96*dl.se),dlY);ctx.stroke();
+
+  // Fréchet mean
+  var fY=m.t+(k+1.5)*rowH;
+  ctx.fillStyle=tC;ctx.font='bold 12px Georgia';ctx.textAlign='right';
+  ctx.fillText('Fr\u00E9chet Geodesic',m.l-8,fY+4);
+  drawStar(ctx,xS(frechet.mu),fY,9,'#ff6d00');
+
+  ctx.fillStyle=tC;ctx.font='13px Georgia';ctx.textAlign='center';
+  ctx.fillText('Geodesic Fr\u00E9chet Mean (orange star) vs Euclidean DL Mean (green diamond)',W/2,22);
+}
+
+// === UI ===
+function renderTable(){
+  var tb=document.getElementById('tbody');tb.innerHTML='';
+  state.studies.forEach(function(s,i){
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td><input value="'+(s.study||'')+'" oninput="state.studies['+i+'].study=this.value" style="width:140px"></td>'+
+      '<td><input type="number" value="'+(s.yi??'')+'" step="0.01" oninput="state.studies['+i+'].yi=+this.value" style="width:80px;font-family:var(--mono)"></td>'+
+      '<td><input type="number" value="'+(s.se??'')+'" step="0.01" oninput="state.studies['+i+'].se=+this.value" style="width:70px;font-family:var(--mono)"></td>'+
+      '<td><button class="del-btn" onclick="state.studies.splice('+i+',1);renderTable()" style="background:none;border:none;color:var(--red);cursor:pointer">\u2715</button></td>';
+    tb.appendChild(tr);
+  });
+}
+function addRow(){state.studies.push({study:'',yi:0,se:0.1});renderTable();}
+function clearData(){state.studies=[];renderTable();document.getElementById('panel-manifold').classList.remove('active');}
+function loadExample(idx){
+  state.studies=EXAMPLES[idx].studies.map(function(s){return Object.assign({},s);});
+  renderTable();
+  runAnalysis();
+}
+
+function switchTab(id){
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('panel-'+id).classList.add('active');
+  document.getElementById('tbtn-'+id).classList.add('active');
+}
+
+function runAnalysis(){
+  if(state.studies.length<2){alert('Need >=2 studies.');return;}
+  var studies=state.studies.filter(function(s){return isFinite(s.yi)&&isFinite(s.se)&&s.se>0;});
+  if(studies.length<2){alert('Need >=2 valid studies.');return;}
+
+  var D = distanceMatrix(studies);
+  var frechet = frechetMean(studies);
+  var dl = dlPool(studies);
+  var kappa = curvatureHeterogeneity(frechet, dl);
+
+  state.result = {D:D, frechet:frechet, dl:dl, kappa:kappa, studies:studies};
+
+  // Metrics
+  var shift = Math.abs(frechet.mu - dl.est);
+  if (!isFinite(shift)) shift = 0;
+  if (!kappa.interpretation) kappa.interpretation = 'Unknown';
+  document.getElementById('manifoldMetrics').innerHTML =
+    '<div class="metric"><div class="metric-val" style="color:var(--accent)">'+frechet.mu.toFixed(3)+'</div><div class="metric-lbl">Fr\u00E9chet Mean (\u03BC*)</div></div>'+
+    '<div class="metric"><div class="metric-val" style="color:var(--green)">'+dl.est.toFixed(3)+'</div><div class="metric-lbl">DL Euclidean Mean</div></div>'+
+    '<div class="metric"><div class="metric-val">'+shift.toFixed(3)+'</div><div class="metric-lbl">Geodesic Shift</div></div>'+
+    '<div class="metric"><div class="metric-val">'+kappa.kappa.toFixed(2)+'</div><div class="metric-lbl">\u03BA-Heterogeneity</div></div>';
+
+  document.getElementById('geodesicMetrics').innerHTML =
+    '<div class="metric"><div class="metric-val">'+(dl.I2*100).toFixed(0)+'%</div><div class="metric-lbl">I\u00B2 (Euclidean)</div></div>'+
+    '<div class="metric"><div class="metric-val">'+kappa.kappa.toFixed(2)+'</div><div class="metric-lbl">\u03BA (Riemannian)</div></div>'+
+    '<div class="metric"><div class="metric-val">'+frechet.meanGeodesicDistance.toFixed(3)+'</div><div class="metric-lbl">Mean Geodesic Dist</div></div>'+
+    '<div class="metric"><div class="metric-val">'+kappa.interpretation.split(' ')[0]+'</div><div class="metric-lbl">Curvature Level</div></div>';
+
+  // Distance matrix
+  var dt='<thead><tr><th></th>';
+  studies.forEach(function(s){dt+='<th style="font-size:9px">'+s.study.substring(0,8)+'</th>';});
+  dt+='</tr></thead><tbody>';
+  for(var i=0;i<studies.length;i++){
+    dt+='<tr><td style="font-weight:600;font-size:10px">'+studies[i].study.substring(0,8)+'</td>';
+    for(var j=0;j<studies.length;j++){
+      var v=D[i][j];
+      var bg=v<0.5?'var(--green)':v<1.5?'var(--amber)':'var(--red)';
+      dt+='<td style="font-size:10px;text-align:center;color:'+bg+'">'+v.toFixed(2)+'</td>';
+    }
+    dt+='</tr>';
+  }
+  dt+='</tbody>';
+  document.getElementById('distTable').innerHTML=dt;
+
+  // Heterogeneity comparison table
+  document.getElementById('hetTable').innerHTML =
+    '<thead><tr><th>Metric</th><th>Value</th><th>Interpretation</th></tr></thead><tbody>'+
+    '<tr><td>I\u00B2 (Euclidean)</td><td>'+(dl.I2*100).toFixed(1)+'%</td><td>'+(dl.I2<0.25?'Low':dl.I2<0.5?'Moderate':dl.I2<0.75?'Substantial':'Considerable')+'</td></tr>'+
+    '<tr><td>\u03BA (Riemannian)</td><td>'+kappa.kappa.toFixed(2)+'</td><td>'+kappa.interpretation+'</td></tr>'+
+    '<tr><td>Mean geodesic distance</td><td>'+kappa.meanGeodesicDistance.toFixed(3)+'</td><td>Average Fisher-Rao distance from Fr\u00E9chet mean</td></tr>'+
+    '<tr><td>Geodesic shift |Fr\u00E9chet - DL|</td><td>'+shift.toFixed(3)+'</td><td>'+(shift<0.01?'Negligible':shift<0.05?'Small':shift<0.1?'Moderate':'Large')+' difference from Euclidean pooling</td></tr>'+
+    '</tbody>';
+
+  // Draw
+  try{drawManifold(studies,D,frechet,dl);}catch(e){}
+  try{drawGeodesic(studies,frechet,dl);}catch(e){}
+
+  // Report
+  document.getElementById('reportText').textContent =
+    'INFORMATION-GEOMETRIC META-ANALYSIS (InfoGeoMA v1.0)\n\n'+
+    'MANIFOLD: '+studies.length+'-dimensional normal manifold with Fisher-Rao metric\n'+
+    'FR\u00C9CHET MEAN: \u03BC* = '+frechet.mu.toFixed(4)+' (\u03C3* = '+frechet.sigma.toFixed(4)+')\n'+
+    'DL EUCLIDEAN MEAN: '+dl.est.toFixed(4)+' (SE = '+dl.se.toFixed(4)+')\n'+
+    'GEODESIC SHIFT: |Fr\u00E9chet - DL| = '+shift.toFixed(4)+'\n\n'+
+    'HETEROGENEITY COMPARISON:\n'+
+    '  I\u00B2 (Euclidean): '+(dl.I2*100).toFixed(1)+'%\n'+
+    '  \u03BA (Riemannian): '+kappa.kappa.toFixed(2)+' \u2014 '+kappa.interpretation+'\n'+
+    '  Mean geodesic distance: '+frechet.meanGeodesicDistance.toFixed(4)+'\n\n'+
+    'INTERPRETATION:\n'+
+    'The Fr\u00E9chet mean is the point on the normal manifold that minimises the sum of squared geodesic (Fisher-Rao) distances to all studies, weighted by precision. '+
+    'Unlike the Euclidean (DL) mean, it accounts for the curvature of the statistical manifold \u2014 meaning it respects the natural geometry of probability distributions.\n\n'+
+    'The \u03BA-heterogeneity measures non-Euclidean spread that I\u00B2 cannot capture. When \u03BA >> 1, studies are spread along the manifold in ways that the normal random-effects model cannot represent.\n\n'+
+    'Generated by InfoGeoMA (Ahmad, 2026). No data left the device.\n'+
+    'References: Amari S. Information Geometry. Springer, 2016. Rao CR. Bull Calcutta Math Soc. 1945;37:81-91.';
+
+  switchTab('manifold');
+}
+
+function copyReport(){navigator.clipboard.writeText(document.getElementById('reportText').textContent).then(function(){alert('Copied!')}).catch(function(){});}
+function exportJSON(){
+  if(!state.result)return;
+  var r=state.result;
+  var d={version:'infogeo-ma-1.0',frechetMu:r.frechet.mu,frechetSigma:r.frechet.sigma,
+    dlEst:r.dl.est,dlSE:r.dl.se,shift:Math.abs(r.frechet.mu-r.dl.est),
+    kappaHeterogeneity:r.kappa.kappa,I2:r.dl.I2,
+    meanGeodesicDistance:r.frechet.meanGeodesicDistance,k:r.studies.length};
+  var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+  var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='infogeo-results.json';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);
+}
+
+function toggleTheme(){
+  var d=document.documentElement.getAttribute('data-theme');
+  document.documentElement.setAttribute('data-theme',d==='dark'?'light':'dark');
+  document.querySelector('.theme-btn').textContent=d==='dark'?'Dark':'Light';
+  if(state.result){try{drawManifold(state.result.studies,state.result.D,state.result.frechet,state.result.dl);drawGeodesic(state.result.studies,state.result.frechet,state.result.dl);}catch(e){}}
+}
+
+// Init
+state.studies=[{study:'',yi:0,se:0.1},{study:'',yi:0,se:0.1}];
+renderTable();
+</script>
+</body>
+</html>
