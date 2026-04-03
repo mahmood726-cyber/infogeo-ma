@@ -148,6 +148,16 @@ canvas{width:100%;border-radius:8px;background:var(--surface)}
    than Euclidean inverse-variance weighting.
    ============================================================ */
 
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 var state = { studies: [], result: null };
 
 var EXAMPLES = [
@@ -458,7 +468,7 @@ function renderTable(){
   var tb=document.getElementById('tbody');tb.innerHTML='';
   state.studies.forEach(function(s,i){
     var tr=document.createElement('tr');
-    tr.innerHTML='<td><input value="'+(s.study||'')+'" oninput="state.studies['+i+'].study=this.value" style="width:140px"></td>'+
+    tr.innerHTML='<td><input value="'+escapeHtml(s.study||'')+'" oninput="state.studies['+i+'].study=this.value" style="width:140px"></td>'+
       '<td><input type="number" value="'+(s.yi??'')+'" step="0.01" oninput="state.studies['+i+'].yi=+this.value" style="width:80px;font-family:var(--mono)"></td>'+
       '<td><input type="number" value="'+(s.se??'')+'" step="0.01" oninput="state.studies['+i+'].se=+this.value" style="width:70px;font-family:var(--mono)"></td>'+
       '<td><button class="del-btn" onclick="state.studies.splice('+i+',1);renderTable()" style="background:none;border:none;color:var(--red);cursor:pointer">\u2715</button></td>';
