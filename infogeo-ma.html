@@ -468,9 +468,9 @@ function renderTable(){
   var tb=document.getElementById('tbody');tb.innerHTML='';
   state.studies.forEach(function(s,i){
     var tr=document.createElement('tr');
-    tr.innerHTML='<td><input value="'+escapeHtml(s.study||'')+'" oninput="state.studies['+i+'].study=this.value" style="width:140px"></td>'+
-      '<td><input type="number" value="'+(s.yi??'')+'" step="0.01" oninput="state.studies['+i+'].yi=+this.value" style="width:80px;font-family:var(--mono)"></td>'+
-      '<td><input type="number" value="'+(s.se??'')+'" step="0.01" oninput="state.studies['+i+'].se=+this.value" style="width:70px;font-family:var(--mono)"></td>'+
+    tr.innerHTML='<td><input aria-label="Study name" value="'+escapeHtml(s.study||'')+'" oninput="state.studies['+i+'].study=this.value" style="width:140px"></td>'+
+      '<td><input aria-label="Effect estimate" type="number" value="'+(s.yi??'')+'" step="0.01" oninput="state.studies['+i+'].yi=+this.value" style="width:80px;font-family:var(--mono)"></td>'+
+      '<td><input aria-label="Standard error" type="number" value="'+(s.se??'')+'" step="0.01" oninput="state.studies['+i+'].se=+this.value" style="width:70px;font-family:var(--mono)"></td>'+
       '<td><button class="del-btn" onclick="state.studies.splice('+i+',1);renderTable()" style="background:none;border:none;color:var(--red);cursor:pointer">\u2715</button></td>';
     tb.appendChild(tr);
   });

@@ -20,7 +20,8 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-HTML = 'file:///' + os.path.abspath(r'C:\Models\InfoGeoMA\infogeo-ma.html').replace('\\', '/')
+HTML_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'infogeo-ma.html'))
+HTML = 'file:///' + HTML_PATH.replace('\\', '/')
 
 
 class TestInfoGeoMA(unittest.TestCase):
